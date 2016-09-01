@@ -274,6 +274,26 @@ class EBUTT3Document(SubtitleDocument):
     def get_dom(self):
         return self._ebutt3_content.toDOM()
 
+    def _is_equal_element(self, a, b):
+        if a.tagName!=b.tagName:
+            return False
+        if sorted(a.attributes.items())!=sorted(b.attributes.items()):
+            return False
+        if len(a.childNodes)!=len(b.childNodes):
+            return False
+        for ac, bc in zip(a.childNodes, b.childNodes):
+            if ac.nodeType!=bc.nodeType:
+                return False
+            if ac.nodeType==ac.TEXT_NODE and ac.data!=bc.data:
+                return False
+            if ac.nodeType==ac.ELEMENT_NODE and not self._is_equal_element(ac, bc):
+                return False
+        return True
+
+    def is_equal_dom(self, other_document):
+        dself, dother= self.get_dom(), other_document.get_dom()
+        return self._is_equal_element(dself.documentElement, dother.documentElement)
+
 
 class EBUTT3DocumentSequence(CloningDocumentSequence):
     """
