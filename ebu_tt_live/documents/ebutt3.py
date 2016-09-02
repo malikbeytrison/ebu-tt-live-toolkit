@@ -4,9 +4,10 @@ from ebu_tt_live import bindings
 from ebu_tt_live.bindings import _ebuttm as metadata, TimingValidationMixin
 from ebu_tt_live.strings import ERR_DOCUMENT_SEQUENCE_MISMATCH, \
     ERR_DOCUMENT_NOT_COMPATIBLE, ERR_DOCUMENT_NOT_PART_OF_SEQUENCE, \
-    ERR_DOCUMENT_SEQUENCE_INCONSISTENCY, DOC_DISCARDED, DOC_TRIMMED
+    ERR_DOCUMENT_SEQUENCE_INCONSISTENCY, DOC_DISCARDED, DOC_TRIMMED, \
+    ERR_UNKNOWN_HASH
 from ebu_tt_live.errors import IncompatibleSequenceError, DocumentDiscardedError, \
-    SequenceOverridden
+    SequenceOverridden, UnknownHashError
 from ebu_tt_live.clocks import get_clock_from_document
 from datetime import timedelta
 from pyxb import BIND
@@ -90,6 +91,9 @@ class EBUTT3Document(SubtitleDocument):
 
     # The sequence the document belongs to
     _sequence = None
+    # The _hash attribute is only in "receiving" context : when a document is
+    # created from a received xml string. It is set in create_from_xml method.
+    _hash = None
 
     def __init__(self, time_base, sequence_number, sequence_identifier, lang, clock_mode=None):
         if not clock_mode and time_base is TimeBase.CLOCK:
@@ -123,6 +127,7 @@ class EBUTT3Document(SubtitleDocument):
                 xml_text=xml
             )
         )
+        instance.document_hash = hash(xml)
         return instance
 
     def _cmp_key(self):
@@ -274,25 +279,19 @@ class EBUTT3Document(SubtitleDocument):
     def get_dom(self):
         return self._ebutt3_content.toDOM()
 
-    def _is_equal_element(self, a, b):
-        if a.tagName!=b.tagName:
-            return False
-        if sorted(a.attributes.items())!=sorted(b.attributes.items()):
-            return False
-        if len(a.childNodes)!=len(b.childNodes):
-            return False
-        for ac, bc in zip(a.childNodes, b.childNodes):
-            if ac.nodeType!=bc.nodeType:
-                return False
-            if ac.nodeType==ac.TEXT_NODE and ac.data!=bc.data:
-                return False
-            if ac.nodeType==ac.ELEMENT_NODE and not self._is_equal_element(ac, bc):
-                return False
-        return True
+    @property
+    def document_hash(self):
+        return self._hash
 
-    def is_equal_dom(self, other_document):
-        dself, dother= self.get_dom(), other_document.get_dom()
-        return self._is_equal_element(dself.documentElement, dother.documentElement)
+    @document_hash.setter
+    def document_hash(self, doc_hash):
+        self._hash = doc_hash
+
+    def has_same_hash(self, other_document):
+        # It should never be raised, but it is a safety test
+        if not self.document_hash or not other_document.document_hash:
+            raise UnknownHashError(ERR_UNKNOWN_HASH)
+        return self.document_hash == other_document.document_hash
 
 
 class EBUTT3DocumentSequence(CloningDocumentSequence):

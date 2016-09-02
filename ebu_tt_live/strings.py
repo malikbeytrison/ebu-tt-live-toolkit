@@ -15,6 +15,7 @@ ERR_DOCUMENT_NOT_PART_OF_SEQUENCE = gettext('Document is not part of any sequenc
 ERR_DOCUMENT_SEQUENCE_INCONSISTENCY = gettext('Timeline consistency problem.')
 ERR_DOCUMENT_EXTENT_MISSING = gettext('{type} cannot be instantiated from {value} because document extent is missing (from the tt element)')
 END_OF_DATA = gettext('End of available data reached')
+ERR_UNKNOWN_HASH = gettext('The hash for this document is not known')
 
 
 DOC_SYNTACTIC_VALIDATION_SUCCESSFUL = gettext('Syntactic validation successful')

@@ -53,3 +53,7 @@ class ExtentMissingError(Exception):
 
     def __str__(self):
         return ERR_DOCUMENT_EXTENT_MISSING.format(type=type(self._attribute), value=self._attribute)
+
+
+class UnknownHashError(Exception):
+    pass
